@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+*.eggs/
+*.whl
+pip-wheel-metadata/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+.cache
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# pyinstaller
+dist/
+build/
+*.spec
+*.manifest
+*.app
+
+# VSCode / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Distribution / packaging
+*.tar.gz
+*.zip
+
+# Local files
+*.local
+*.bak
+
+# Credentials
+secrets.yml
+credentials.json
+
+# DrissionPage local cache (if any)
+localpycs/
+
+# OS generated files
+Thumbs.db
+
+# JetBrains
+*.iml
+
+# Misc
+__MACOSX/
+
+# Keep README, source, ui, core, app.py
