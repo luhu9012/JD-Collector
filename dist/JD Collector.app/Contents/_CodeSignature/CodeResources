@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/base_library.zip</key>
 		<data>
-		FAqVd9RFnYdjjJIogH7ZSTBCg/k=
+		ZTyedeAfoNAn1BIHAX4Iqt+Mh0w=
 		</data>
 		<key>Resources/certifi/cacert.pem</key>
 		<data>
@@ -54,11 +54,71 @@
 		</data>
 		<key>Resources/core.py</key>
 		<data>
-		l62/WSMag6BI62H7Puyl6TX9wBo=
+		iG64CuSUcrS8RxFShFKJhEmNzdM=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/INSTALLER</key>
+		<data>
+		16AxQdXWseiLa1nvCLZoHfISxZk=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/METADATA</key>
+		<data>
+		1vSPDj+uTBvach+kTbmE7sJTuG4=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/RECORD</key>
+		<data>
+		OCdSNDBQGh3ni+AO16x0EXh76Nw=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/WHEEL</key>
+		<data>
+		5yJNqX7e37nQI5z3yt526+OZd0M=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/licenses/LICENSE</key>
+		<data>
+		gBKbzpAwzyFfyTAG3OmLC6jHePg=
+		</data>
+		<key>Resources/h2-4.3.0.dist-info/top_level.txt</key>
+		<data>
+		i6AUH/qhj0NV25EWBrayg9m+8bE=
 		</data>
 		<key>Resources/icon-windowed.icns</key>
 		<data>
 		eEHOuYpZLB0vKGVIWGZOh5rH8+o=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/rng/iso-schematron.rng</key>
+		<data>
+		Go1op5prM1pmBGPMmbTo7uFqB6E=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/RNG2Schtrn.xsl</key>
+		<data>
+		gw8JUVGbfoiM4PnGl4RuYCHn/sA=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/XSD2Schtrn.xsl</key>
+		<data>
+		+27UKlCTWg5312vRXldA7ijU6zI=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_abstract_expand.xsl</key>
+		<data>
+		47+62eTQoIRbDwHznw46HeAk23A=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_dsdl_include.xsl</key>
+		<data>
+		OGl2iT6BakNol6cYdYs6u/JoaeE=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_schematron_message.xsl</key>
+		<data>
+		JnOKlPhxa+9BjjlodWBP5w4YSI0=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_schematron_skeleton_for_xslt1.xsl</key>
+		<data>
+		QekDoEjBN2P/f6ofaCbqkTKe9ms=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_svrl_for_xslt1.xsl</key>
+		<data>
+		0b3cqpseVdF8eLWXy1wcOB5WjeY=
+		</data>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/readme.txt</key>
+		<data>
+		70CMM3nNaMhY+q1Fr/J9H9teBhk=
 		</data>
 		<key>Resources/markupsafe-3.0.3.dist-info/INSTALLER</key>
 		<data>
@@ -331,6 +391,24 @@
 			<key>symlink</key>
 			<string>../../Resources/chardet/py.typed</string>
 		</dict>
+		<key>Frameworks/charset_normalizer/md.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			EFw1swcSNgHeB/SHGzDDP8KNkqA=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"1ca5786d0b6132bf2a31b64d66adbd1a785339aa" or cdhash H"105c35b307123601de07f4871b30c33fc28d92a0"</string>
+		</dict>
+		<key>Frameworks/charset_normalizer/md__mypyc.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			pi7OgFASzk5JAowvaTWljsQ2b7g=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"1dacd3f3d32ddb8c14c69721a6c16a919938e416" or cdhash H"a62ece805012ce4e49028c2f6935a58ec4366fb8"</string>
+		</dict>
 		<key>Frameworks/click-8.3.1.dist-info</key>
 		<dict>
 			<key>symlink</key>
@@ -340,6 +418,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/core.py</string>
+		</dict>
+		<key>Frameworks/h2-4.3.0.dist-info</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/h2-4.3.0.dist-info</string>
 		</dict>
 		<key>Frameworks/jiter/jiter.cpython-310-darwin.so</key>
 		<dict>
@@ -386,6 +469,15 @@
 			<key>requirement</key>
 			<string>cdhash H"d67d5ff5bab02e9943c40315d244a4b5548fc26d"</string>
 		</dict>
+		<key>Frameworks/libsqlite3.0.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			TigbakAUT8SCx/unfqCQkNlsJ0g=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"4e281b6a40144fc482c7fba77ea09090d96c2748"</string>
+		</dict>
 		<key>Frameworks/libssl.1.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
@@ -394,6 +486,74 @@
 			</data>
 			<key>requirement</key>
 			<string>cdhash H"3bd79b78e3ab30390ed7058951169025f753d4f1"</string>
+		</dict>
+		<key>Frameworks/lxml/_elementpath.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			/14ENMeWU+HJEmdF6xCIl3P5CUc=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"52b5f24e6fc692155295f5050699e582d3646bd5" or cdhash H"ff5e0434c79653e1c9126745eb10889773f90947"</string>
+		</dict>
+		<key>Frameworks/lxml/builder.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			WTLDAu3rA+68xTkAiP+NHXmXsqU=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"eb9089224e5f22e144a8372330b7af19c2176f56" or cdhash H"5932c302edeb03eebcc5390088ff8d1d7997b2a5"</string>
+		</dict>
+		<key>Frameworks/lxml/etree.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			1BryukzOfYTvF/0HXFb21lnslF0=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"6b37383dc0a99002f3551b4ab647e174dd05a7b8" or cdhash H"d41af2ba4cce7d84ef17fd075c56f6d659ec945d"</string>
+		</dict>
+		<key>Frameworks/lxml/html/_difflib.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			eqa5xYo0C+dSPiFjNCkUgZTjgLM=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"463c6b23a0402835e6fd1d873bffbb4ac3d59f12" or cdhash H"7aa6b9c58a340be7523e21633429148194e380b3"</string>
+		</dict>
+		<key>Frameworks/lxml/html/diff.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			5IFpz3PJePgqky10rdk9QsjzBZE=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"981242ef63a3105964e96a72aadee5675dc24829" or cdhash H"e48169cf73c978f82a932d74add93d42c8f30591"</string>
+		</dict>
+		<key>Frameworks/lxml/isoschematron</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Resources/lxml/isoschematron</string>
+		</dict>
+		<key>Frameworks/lxml/objectify.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			+Q9Gpdlvm+RVJroMS8QEOLwicDE=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"2f257b86c49abfe7fa8753c38eee9b0ace700508" or cdhash H"f90f46a5d96f9be45526ba0c4bc40438bc227031"</string>
+		</dict>
+		<key>Frameworks/lxml/sax.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			iCLnrQDPDgaD+3t3AGXppMvy+cA=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"3bc3136d6439ddbb8a6e95d772d6fed5a9a462fc" or cdhash H"8822e7ad00cf0e0683fb7b770065e9a4cbf2f9c0"</string>
 		</dict>
 		<key>Frameworks/markupsafe-3.0.3.dist-info</key>
 		<dict>
@@ -426,6 +586,15 @@
 			</data>
 			<key>requirement</key>
 			<string>cdhash H"448046ad24c59b042d521463f435fbfc8f4e1060" or cdhash H"8d19b7c10aad20de840bb9f1aae0801bf2940f3a"</string>
+		</dict>
+		<key>Frameworks/psutil/_psutil_osx.abi3.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			c/K67cUH7ysWim783vcBBgaYAAg=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"2deae9abe8a91ad7d5a0f35b29e7830f226bcffa" or cdhash H"73f2baedc507ef2b168a6efcdef7010606980008"</string>
 		</dict>
 		<key>Frameworks/pydantic-2.12.5.dist-info</key>
 		<dict>
@@ -761,6 +930,15 @@
 			<key>requirement</key>
 			<string>cdhash H"237125f86e2924cecdde468c56c697cb6120109d"</string>
 		</dict>
+		<key>Frameworks/python3__dot__10/lib-dynload/_sqlite3.cpython-310-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			CFcg3wl6lBLUI38OsCUaiqHg6u4=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"085720df097a9412d4237f0eb0251a8aa1e0eaee"</string>
+		</dict>
 		<key>Frameworks/python3__dot__10/lib-dynload/_ssl.cpython-310-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
@@ -995,7 +1173,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			wcTGu7nMCG8tdm8dSOqpkf76f136bfH9aTDWgpJLQl4=
+			p0filUVUm236kfmuR4XlaY7AE9WGb2vZbGm83nHagZ4=
 			</data>
 		</dict>
 		<key>Resources/certifi/cacert.pem</key>
@@ -1050,6 +1228,11 @@
 			47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
 			</data>
 		</dict>
+		<key>Resources/charset_normalizer</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Frameworks/charset_normalizer</string>
+		</dict>
 		<key>Resources/click-8.3.1.dist-info/INSTALLER</key>
 		<dict>
 			<key>hash2</key>
@@ -1089,7 +1272,49 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Wqq3+Ecv32xw/bnqZN4lyAVT6KyAJxRZgZZjFc/tpNY=
+			2o4we1qtOZ8uZ7ANpr4+4eUASxjqmzNr+4HevmLU5hA=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/INSTALLER</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zuuue4knoyJ+UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/METADATA</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			svR/ggFJFCBkLCKeX8vL1Vdsev0CMmTctZtesi3LsmU=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/RECORD</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			sxLY6YDiPZ9HkS9f4+UA6mbvOLGrKBjkoWRVcvO5AM4=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/WHEEL</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			/zCd3N1l69ArxyTb8rzEoP9TpbYXkqRFSNOD5OuxnTs=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/licenses/LICENSE</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			emWlrwy6vxwWJRx8ayt8tG0WpyIueZdbm2H81mouPyg=
+			</data>
+		</dict>
+		<key>Resources/h2-4.3.0.dist-info/top_level.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Hiulx8KxI2jFUM1dG7+CZeRkO3j50MBwCLG36Vrq+kI=
 			</data>
 		</dict>
 		<key>Resources/icon-windowed.icns</key>
@@ -1124,10 +1349,108 @@
 			<key>symlink</key>
 			<string>../Frameworks/libreadline.8.dylib</string>
 		</dict>
+		<key>Resources/libsqlite3.0.dylib</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Frameworks/libsqlite3.0.dylib</string>
+		</dict>
 		<key>Resources/libssl.1.1.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>../Frameworks/libssl.1.1.dylib</string>
+		</dict>
+		<key>Resources/lxml/_elementpath.cpython-310-darwin.so</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/_elementpath.cpython-310-darwin.so</string>
+		</dict>
+		<key>Resources/lxml/builder.cpython-310-darwin.so</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/builder.cpython-310-darwin.so</string>
+		</dict>
+		<key>Resources/lxml/etree.cpython-310-darwin.so</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/etree.cpython-310-darwin.so</string>
+		</dict>
+		<key>Resources/lxml/html</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/html</string>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/rng/iso-schematron.rng</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VsWxPyi3iViJDDbjJJw0wWkEHkLrz9zoCA8zJLor9N4=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/RNG2Schtrn.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ObebsB8Wt+d3uIA/U5NU85TpnQ3PxPX38TdOAqosMac=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/XSD2Schtrn.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			QweRrIIM+zFcgg98GXA2CaWfIbgVE0XKEeYSfvv67A0=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_abstract_expand.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			xSZ/Ekq/I+62ZpiE5AqYYHwFW/qh855zt9V4/s7rbkY=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_dsdl_include.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			x42QJ+dxQ1waPzydsCoQnp2Xj15y53nW43O7BuoDRHk=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_schematron_message.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Tr9BnO6pzjVWwhqJfm10UlvAy95EgfSCz2iMlrVGT6Q=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_schematron_skeleton_for_xslt1.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ue8q/88X4e/jsJizo31GRNBxNhdxkEE9fY20oq0Iqwk=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/iso_svrl_for_xslt1.xsl</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			BBAdsVSi5zAzeGepuN6gS1saQINDqITXKplmmj4dTWg=
+			</data>
+		</dict>
+		<key>Resources/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/readme.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			OGLiFswuLJEW5EPYKOeoauuCJFEtVa6jyzBE1OcJI98=
+			</data>
+		</dict>
+		<key>Resources/lxml/objectify.cpython-310-darwin.so</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/objectify.cpython-310-darwin.so</string>
+		</dict>
+		<key>Resources/lxml/sax.cpython-310-darwin.so</key>
+		<dict>
+			<key>symlink</key>
+			<string>../../Frameworks/lxml/sax.cpython-310-darwin.so</string>
 		</dict>
 		<key>Resources/markupsafe</key>
 		<dict>
@@ -1180,6 +1503,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Frameworks/objc</string>
+		</dict>
+		<key>Resources/psutil</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Frameworks/psutil</string>
 		</dict>
 		<key>Resources/pydantic-2.12.5.dist-info/INSTALLER</key>
 		<dict>

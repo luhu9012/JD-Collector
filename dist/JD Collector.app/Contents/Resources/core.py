@@ -5,7 +5,7 @@ core.py — 采集核心逻辑 v2.0
 支持：职位搜索 / 公司搜索，简便模式 / 详情模式
 """
 
-import time, re, json, csv, traceback, random
+import time, re, json, csv, traceback, random, math
 from pathlib import Path
 from datetime import datetime
 from queue import Queue
@@ -437,13 +437,24 @@ class Collector:
 
         url = self.build_search_url(params)
         self.log(f"🌐 打开搜索页：{url}")
-        page.listen.start('joblist.json')
+        patterns = [
+            'joblist.json',
+            'search/joblist.json',
+            'zpgeek/search/joblist.json',
+            'wapi/zpgeek/search/joblist.json'
+        ]
+        # start listeners for all candidate patterns before navigation
+        for p in patterns:
+            try:
+                page.listen.start(p)
+            except Exception:
+                pass
         page.get(url)
         self.log("⏳ 等待页面加载...")
 
         scroll_count = 0
         while len(collected_jobs) < limit and not self.stop_flag:
-            res = page.listen.wait(timeout=12)
+            res, page = self._safe_listen_wait(page, patterns, url, timeout=12)
             if not res:
                 self.log("   等待超时，尝试滚动触发...", "warn")
                 page.scroll.down(500)
@@ -481,7 +492,10 @@ class Collector:
             time.sleep(random.uniform(1.0, 2.0))
             scroll_count += 1
 
-        page.listen.stop()
+        try:
+            page.listen.stop()
+        except Exception:
+            pass
 
         # 公司名模式：AI过滤
         if params.get('search_type') == 'company' and collected_jobs:
@@ -507,108 +521,172 @@ class Collector:
 
     # ── 职位搜索 - 详情模式 ──────────────────────────
 
-    def collect_search_detail(self, page, params: dict, limit: int) -> tuple:
+    def collect_search_detail(self, page, params: dict, limit: int, initial_res=None) -> tuple:
         success, failed, skipped = 0, 0, 0
         saved_ids = get_saved_ids(self.save_dir)
-        collected_jobs = []
-
+        processed_ids = set()
         url = self.build_search_url(params)
-        self.log(f"🌐 打开搜索页：{url}")
-        page.listen.start('joblist.json')
-        page.get(url)
-        self.log("⏳ 等待页面加载...")
+        list_pattern = 'wapi/zpgeek/search/joblist.json'
+        detail_pattern = 'wapi/zpgeek/job/detail.json'
 
-        # 先收集列表数据
-        scroll_count = 0
-        while len(collected_jobs) < limit and not self.stop_flag:
-            res = page.listen.wait(timeout=12)
-            if not res:
-                page.scroll.down(500)
-                scroll_count += 1
-                if scroll_count > 3:
-                    break
-                continue
+        if initial_res is None:
+            self.log(f"🌐 打开搜索页：{url}")
+            page.listen.start(list_pattern)
+            page.get(url)
+            self.log("⏳ 等待职位列表响应...")
+        else:
+            self.log("✅ 使用首次打开搜索页时已拦截的职位列表响应")
 
-            body = res.response.body
+        page_no = 1
+        pending_list_res = initial_res
+        while success + failed < limit and not self.stop_flag:
+            list_res = pending_list_res or page.listen.wait(timeout=15)
+            pending_list_res = None
+            try:
+                page.listen.stop()
+            except Exception:
+                pass
+            if not list_res:
+                self.log("   ⚠️ 未捕获到新的职位列表响应，结束采集", "warn")
+                break
+
+            body = list_res.response.body
+            if isinstance(body, (bytes, bytearray)):
+                body = body.decode('utf-8', errors='ignore')
             if isinstance(body, str):
                 body = json.loads(body)
+            zp_data = body.get('zpData', {}) if isinstance(body, dict) else {}
+            job_list = zp_data.get('jobList', []) or []
+            has_more = bool(zp_data.get('hasMore', False))
+            self.log(f"✅ 第 {page_no} 批列表：{len(job_list)} 个职位")
 
-            job_list = body.get('zpData', {}).get('jobList', [])
-            has_more = body.get('zpData', {}).get('hasMore', False)
-
-            for item in job_list:
-                if len(collected_jobs) >= limit:
-                    break
+            jobs = []
+            for card_index, item in enumerate(job_list):
                 job = parse_job_item(item)
-                job['source_url'] = f"https://www.zhipin.com/job_detail/{job['job_id']}.html"
-                if job['job_id'] and job['job_id'] in saved_ids:
+                job_id = job.get('job_id', '')
+                job['source_url'] = f"https://www.zhipin.com/job_detail/{job_id}.html" if job_id else ''
+                if job_id and (job_id in saved_ids or job_id in processed_ids):
                     skipped += 1
                     continue
-                collected_jobs.append(job)
+                job['_card_index'] = card_index
+                jobs.append(job)
 
-            if not has_more or len(collected_jobs) >= limit:
-                break
+            if params.get('search_type') == 'company' and jobs:
+                jobs = self.ai_filter(jobs)
 
-            page.scroll.down(600)
-            time.sleep(random.uniform(1.0, 2.0))
-            scroll_count += 1
+            # 第一张通常已默认选中，先点击其他卡片，最后再切回第一张，确保每次都触发详情请求。
+            if len(jobs) > 1:
+                jobs = jobs[1:] + jobs[:1]
 
-        page.listen.stop()
-        self.log(f"✅ 共收集 {len(collected_jobs)} 个待采集职位")
+            cards = page.eles('css:.job-list-container .job-card-wrap') or page.eles('css:.job-card-wrap') or []
+            self.log(f"📋 当前 DOM 找到 {len(cards)} 张职位卡片，开始逐张点击")
 
-        # 公司名模式：AI过滤
-        if params.get('search_type') == 'company' and collected_jobs:
-            self.log("\n🤖 AI过滤目标岗位...")
-            collected_jobs = self.ai_filter(collected_jobs)
+            for job in jobs:
+                if self.stop_flag or success + failed >= limit:
+                    break
+                fallback_index = job.pop('_card_index', 0)
+                cards = page.eles('css:.job-list-container .job-card-wrap') or page.eles('css:.job-card-wrap') or []
+                card_index = None
+                job_id = job.get('job_id', '')
+                job_name = job.get('job_name', '')
+                for index, card in enumerate(cards):
+                    try:
+                        link = card.ele('css:.job-name')
+                        href = link.attr('href') if link else ''
+                        card_name = link.text.strip() if link else ''
+                        if (job_id and href and job_id in href) or (job_name and card_name == job_name):
+                            card_index = index
+                            break
+                    except Exception:
+                        continue
+                if card_index is None:
+                    card_index = fallback_index
+                if card_index >= len(cards):
+                    self.log(f"   ⚠️ 第 {card_index + 1} 个职位没有对应可见卡片，跳过", "warn")
+                    failed += 1
+                    continue
 
-        # 逐个点击卡片拿详情
-        self.progress(0, len(collected_jobs))
-        cards = page.eles('css:.job-card-box')
-        self.log(f"\n📋 开始逐个获取详情（共 {len(collected_jobs)} 个）")
+                self.log(f"── [{success + failed + 1}/{limit}] 点击卡片 {card_index + 1}：{job.get('job_name', '')}")
+                detail_res = None
+                for attempt in range(2):
+                    try:
+                        page.listen.start(detail_pattern)
+                        cards = page.eles('css:.job-list-container .job-card-wrap') or page.eles('css:.job-card-wrap') or []
+                        card = cards[card_index]
+                        click_area = card.ele('css:.job-info') or card.ele('css:.job-card-box') or card
 
-        for i, job in enumerate(collected_jobs):
-            if self.stop_flag:
-                break
+                        # Clicker.at() sends a real mouse event at the element centre and bubbles to
+                        # the Vue handler on .job-card-wrap without navigating the job-name link.
+                        click_area.click.at()
+                        time.sleep(random.uniform(0.35, 0.7))
+                        active_class = card.attr('class') or ''
+                        self.log(
+                            f"   鼠标点击完成：卡片 {card_index + 1}，选中态={'active' in active_class}",
+                            "debug",
+                        )
+                        detail_res = page.listen.wait(timeout=8)
+                        if detail_res:
+                            detail_body = detail_res.response.body
+                            if isinstance(detail_body, (bytes, bytearray)):
+                                detail_body = detail_body.decode('utf-8', errors='ignore')
+                            if isinstance(detail_body, str):
+                                detail_body = json.loads(detail_body)
+                            response_job_id = (
+                                detail_body.get('zpData', {}).get('jobInfo', {}).get('encryptJobId', '')
+                                if isinstance(detail_body, dict) else ''
+                            )
+                            if job_id and response_job_id and response_job_id != job_id:
+                                self.log(
+                                    f"   ⚠️ 详情响应职位不匹配，重试当前卡片（{attempt + 1}/2）",
+                                    "warn",
+                                )
+                                detail_res = None
+                                continue
+                            break
+                        self.log(f"   详情响应超时，重试当前卡片（{attempt + 1}/2）", "warn")
+                    except Exception as e:
+                        self.log(f"   ⚠️ 点击或监听失败（{attempt + 1}/2）：{e}", "warn")
+                    finally:
+                        try:
+                            page.listen.stop()
+                        except Exception:
+                            pass
+                    if attempt == 0:
+                        time.sleep(random.uniform(0.8, 1.3))
 
-            self.log(f"\n── [{i+1}/{len(collected_jobs)}] {job['job_name']} ──")
-
-            try:
-                if i == 0:
-                    # 第一张卡片：页面加载时已默认高亮，直接从右侧 HTML 面板解析
-                    job.update(parse_detail_from_html(page))
-                    self.log(f"   ✅ 详情获取成功（HTML）")
-                else:
-                    # 后续卡片：点击触发 detail.json，监听响应
-                    page.listen.start('zpgeek/job/detail')
-                    if i < len(cards):
-                        cards[i].click()
-                    res = page.listen.wait(timeout=10)
-                    page.listen.stop()
-                    if res:
-                        body = res.response.body
-                        if isinstance(body, str):
-                            body = json.loads(body)
-                        job.update(parse_detail(body))
-                        self.log(f"   ✅ 详情获取成功（JSON）")
+                try:
+                    if detail_res:
+                        detail = parse_detail(detail_body if isinstance(detail_body, dict) else {})
+                        if not detail:
+                            raise ValueError("详情响应中没有可解析字段")
+                        job.update(detail)
+                        self.log("   ✅ 已拦截并解析职位详情", "success")
                     else:
-                        # 超时降级：从 HTML 面板读取
                         job.update(parse_detail_from_html(page))
-                        self.log(f"   ⚠️  JSON超时，降级HTML解析", "warn")
-                    time.sleep(random.uniform(1.5, 2.5))
-            except Exception as e:
-                self.log(f"   ⚠️  详情获取失败：{e}", "warn")
+                        self.log("   ⚠️ 详情响应超时，已解析右侧详情面板", "warn")
 
+                    self.save_record(job)
+                    job_id = job.get('job_id', '')
+                    if job_id:
+                        processed_ids.add(job_id)
+                        mark_saved(job_id, self.save_dir)
+                    success += 1
+                    self.progress(success, limit)
+                    self.log(f"   💾 {job.get('job_name', '')} | {job.get('salary', '')}", "success")
+                except Exception as e:
+                    failed += 1
+                    self.log(f"   ❌ 详情解析或保存失败：{e}", "error")
 
-            try:
-                filename = self.save_record(job)
-                if job['job_id']:
-                    mark_saved(job['job_id'], self.save_dir)
-                self.log(f"   💾 {job['job_name']} | {job['salary']}", "success")
-                success += 1
-                self.progress(success, len(collected_jobs))
-            except Exception as e:
-                self.log(f"   ❌ 保存失败：{e}", "error")
-                failed += 1
+                time.sleep(random.uniform(1.0, 2.0))
+
+            if not has_more or success + failed >= limit or self.stop_flag:
+                break
+
+            page_no += 1
+            self.log("   向下滚动，触发下一批职位列表...")
+            page.listen.start(list_pattern)
+            page.scroll.to_bottom()
+            time.sleep(random.uniform(1.5, 2.5))
 
         return success, failed, skipped
 
@@ -704,8 +782,11 @@ class Collector:
                         target_cards = page.eles('css:li.job-card-box')
                         page.listen.start('detail')
                         target_cards[idx].click()
-                        res = page.listen.wait(timeout=10)
-                        page.listen.stop()
+                        res, page = self._safe_listen_wait(page, 'detail', None, timeout=10)
+                        try:
+                            page.listen.stop()
+                        except Exception:
+                            pass
                         if res:
                             body = res.response.body
                             if isinstance(body, str):
@@ -743,7 +824,7 @@ class Collector:
 
     def run(self, params: dict):
         try:
-            query        = params.get('query', '储能 技术支持')
+            query        = params.get('query', '视觉 上位机')
             collect_mode = params.get('collect_mode', 'fast')
             limit        = int(params.get('limit', 30))
 
@@ -765,14 +846,70 @@ class Collector:
             # 先打开搜索页，判断是否有公司卡片
             search_url = self.build_search_url(params)
             self.log(f"\n🌐 打开搜索页，判断结果类型...")
-            page.listen.start('joblist.json')
+            patterns = [
+                'joblist.json',
+                'search/joblist.json',
+                'zpgeek/search/joblist.json',
+                'wapi/zpgeek/search/joblist.json',
+            ]
+            for p in patterns:
+                try:
+                    page.listen.start(p)
+                except Exception:
+                    pass
             page.get(search_url)
-            res = page.listen.wait(timeout=12)
-            page.listen.stop()
-            time.sleep(2)
+            res, page = self._safe_listen_wait(page, patterns, search_url, timeout=12)
+            try:
+                page.listen.stop()
+            except Exception:
+                pass
 
-            # 检测公司卡片
-            company_card = page.ele('xpath://div[contains(@class,"c-company-card")]')
+            # 如果没有捕获到网络响应，可能页面改为通过不同接口或直接客户端渲染
+            if not res:
+                self.log("   未捕获到 joblist.json 响应，尝试通过 DOM 检测结果或延长等待...", "warn")
+                time.sleep(1)
+                # 先尝试通过 DOM 判断是否已有职位卡片
+                company_card = page.ele('xpath://div[contains(@class,"c-company-card")]')
+                cards = page.eles('css:.job-card-box')
+                if not company_card and not cards:
+                    # 再尝试延长监听（兼容接口名变化或延迟加载）
+                    self.log("   未在 DOM 中找到职位卡片，延长监听至 20s ...", "warn")
+                    res, page = self._safe_listen_wait(page, patterns, search_url, timeout=20)
+                    try:
+                        page.listen.stop()
+                    except Exception:
+                        pass
+                    # 更新 DOM 检测结果
+                    company_card = page.ele('xpath://div[contains(@class,"c-company-card")]')
+                    cards = page.eles('css:.job-card-box')
+                    # 如果仍然没有卡片，轮询 DOM（兼容前端延迟渲染）并收集诊断信息
+                    if not company_card and not cards:
+                        self.log("   继续轮询 DOM，等待客户端渲染（最多 20s）...", "warn")
+                        waited = 0
+                        while waited < 20 and not (company_card or cards):
+                            time.sleep(1)
+                            waited += 1
+                            if waited % 5 == 0:
+                                self.log(f"   已等待 {waited}s，检查 DOM...", "warn")
+                            company_card = page.ele('xpath://div[contains(@class,"c-company-card")]')
+                            cards = page.eles('css:.job-card-box')
+                        if not company_card and not cards:
+                            # 诊断性日志：采集页面URL与脚本摘要，帮助定位接口/渲染方式
+                            try:
+                                url_snip = page.url
+                            except Exception:
+                                url_snip = '<unknown>'
+                            try:
+                                scripts = page.run_js(
+                                    "var s=Array.from(document.scripts).map(x=>x.src||x.innerText.slice(0,200)); JSON.stringify(s);"
+                                )
+                            except Exception:
+                                scripts = 'unable to read scripts'
+                            self.log(f"   诊断：仍未找到职位卡片，当前URL：{url_snip}", "error")
+                            self.log(f"   诊断：页面脚本（片段）：{str(scripts)[:1000]}", "error")
+            else:
+                time.sleep(2)
+                company_card = page.ele('xpath://div[contains(@class,"c-company-card")]')
 
             if company_card:
                 # 公司搜索模式
@@ -807,7 +944,7 @@ class Collector:
                 self.log(f"\n📋 职位搜索模式")
                 if collect_mode == 'detail':
                     self.log(f"   详情模式采集...")
-                    s, f, sk = self.collect_search_detail(page, params, limit)
+                    s, f, sk = self.collect_search_detail(page, params, limit, initial_res=res)
                 else:
                     self.log(f"   简便模式采集...")
                     s, f, sk = self.collect_search_fast(page, params, limit)
@@ -822,3 +959,91 @@ class Collector:
             self.log(f"\n❌ 采集异常：{e}", "error")
             self.log(traceback.format_exc(), "error")
             self.done(0, 0, 0)
+
+    def _safe_listen_wait(self, page, pattern, url: str = None, timeout: int = 12):
+        """Attempt to call `page.listen.wait` for one or multiple patterns.
+        `pattern` may be a string or a list/tuple of substrings to try.
+        If the listener is broken, attempt to recreate the page and retry
+        once. Returns a tuple (res, page).
+        """
+        patterns = pattern if isinstance(pattern, (list, tuple)) else [pattern]
+
+        def try_patterns(p: object, pats, wait_timeout):
+            for pat in pats:
+                try:
+                    p.listen.start(pat)
+                except Exception:
+                    # ignore start errors and continue with next pattern
+                    pass
+                # poll in short intervals to increase chance of catching requests
+                waited = 0.0
+                step = 0.8
+                while waited < wait_timeout:
+                    try:
+                        # log current page URL for diagnostics
+                        try:
+                            cur_url = getattr(p, 'url', None) or getattr(p, 'current_url', None)
+                        except Exception:
+                            cur_url = '<unknown>'
+                        self.log(f"   监听模式 '{pat}' 等待中，已等待 {waited:.1f}s，页面URL={cur_url}")
+                        # p.listen.wait expects an integer number of seconds; use ceil to avoid zero
+                        wait_sec = int(math.ceil(step)) if step > 0 else 1
+                        res = p.listen.wait(timeout=wait_sec)
+                        if res:
+                            return res, p
+                    except Exception as e:
+                        # if listen.wait raises, record and continue polling
+                        self.log(f"   监听模式 '{pat}' 异常等待：{e}", "warn")
+                    waited += step
+                # timed out for this pattern, continue to next
+            return None, p
+
+        # First try with current page
+        self.log(f"   调试：尝试捕获网络响应，候选模式={patterns}，超时={timeout}s")
+        try:
+            res, page = try_patterns(page, patterns, timeout)
+            if res:
+                # try to gather some diagnostic info about matched response
+                try:
+                    url_matched = getattr(res.response, 'url', None) or getattr(res, 'url', None)
+                except Exception:
+                    url_matched = None
+                preview = None
+                try:
+                    body = res.response.body
+                    if isinstance(body, str):
+                        preview = body[:800]
+                    elif isinstance(body, (bytes, bytearray)):
+                        preview = str(body)[:800]
+                    elif isinstance(body, dict):
+                        preview = json.dumps(list(body.keys()))[:800]
+                except Exception:
+                    preview = '<unable to preview body>'
+                self.log(f"   捕获到响应：url={url_matched}  预览={str(preview)[:300]}")
+                return res, page
+        except AttributeError:
+            pass
+
+        # If nothing found or listener broken, try to recreate page and retry
+        self.log("   监听未命中或异常，尝试重连页面并用更多候选模式重试...", "warn")
+        try:
+            new_page = get_page(self.port)
+            # If a URL is provided, navigate once to re-trigger network
+            if url:
+                try:
+                    new_page.get(url)
+                except Exception as e:
+                    self.log(f"   重连时导航失败：{e}", "warn")
+            res, new_page = try_patterns(new_page, patterns, timeout)
+            if res:
+                try:
+                    url_matched = getattr(res.response, 'url', None) or getattr(res, 'url', None)
+                except Exception:
+                    url_matched = None
+                self.log(f"   重连后捕获到响应：url={url_matched}")
+            else:
+                self.log("   重连后仍未捕获到响应", "warn")
+            return res, new_page
+        except Exception as e:
+            self.log(f"   监听重连失败：{e}", "error")
+            return None, page
