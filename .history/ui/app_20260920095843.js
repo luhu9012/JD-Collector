@@ -41,7 +41,7 @@ function switchTab(name) {
   document.querySelectorAll(".tab").forEach(t =>
     t.classList.toggle("active", t.dataset.tab === name));
   document.querySelectorAll(".tab-content").forEach(c =>
-    c.classList.toggle("active", c.dataset.tab === name));
+    c.classList.toggle("active", c.id === "tab-" + name));
   if (name === "data") loadDataTab();
 }
 document.querySelectorAll(".tab").forEach(tab =>
@@ -339,20 +339,11 @@ async function renderCharts() {
   const stats = await api().get_stats();
   if (!stats) return;
 
-  // 暗色主题公共配置
-  const DARK = {
-    tickColor:  '#777',
-    gridColor:  'rgba(255,255,255,.06)',
-    legendColor:'#999',
-    cardBg:     '#252525',
-  };
-
   function destroy(id) {
     if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
   }
 
-  // 单色柱状图
-  function barChart(id, labels, data, color) {
+  function barChart(id, labels, data, color = '#3b82f6') {
     destroy(id);
     const ctx = document.getElementById(id);
     if (!ctx) return;
@@ -360,39 +351,24 @@ async function renderCharts() {
       type: 'bar',
       data: {
         labels,
-        datasets: [{
-          data,
-          backgroundColor: color,
-          borderRadius: 4,
-          borderSkipped: false,
-        }],
+        datasets: [{ data, backgroundColor: color, borderRadius: 5, borderSkipped: false }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: ctx => ` ${ctx.parsed.y} 条`,
-        }}},
+        plugins: { legend: { display: false } },
         scales: {
-          x: {
-            ticks: { color: DARK.tickColor, font: { size: 10 }, maxRotation: 35 },
-            grid:  { display: false },
-          },
-          y: {
-            ticks: { color: DARK.tickColor, font: { size: 10 }, precision: 0 },
-            grid:  { color: DARK.gridColor },
-            beginAtZero: true,
-          },
+          x: { ticks: { font: { size: 11 }, maxRotation: 30 }, grid: { display: false } },
+          y: { ticks: { font: { size: 11 }, precision: 0 },
+               grid: { color: 'rgba(128,128,128,.1)' }, beginAtZero: true },
         },
       },
     });
   }
 
-  // 环形图
   function doughnutChart(id, labels, data) {
     destroy(id);
     const ctx = document.getElementById(id);
     if (!ctx) return;
-    if (!data.length || data.every(v => v === 0)) return;
     _charts[id] = new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -401,126 +377,55 @@ async function renderCharts() {
           data,
           backgroundColor: PALETTE.slice(0, data.length),
           borderWidth: 2,
-          borderColor: DARK.cardBg,
-          hoverOffset: 4,
+          borderColor: getComputedStyle(document.documentElement)
+            .getPropertyValue('--card').trim() || '#fff',
         }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        cutout: '58%',
+        cutout: '60%',
         plugins: {
           legend: {
             position: 'right',
-            labels: {
-              color: DARK.legendColor,
-              font: { size: 10 },
-              boxWidth: 9, padding: 6,
-              // 超长标签截断
-              generateLabels(chart) {
-                const orig = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                return orig.map(l => ({
-                  ...l,
-                  text: l.text.length > 8 ? l.text.slice(0, 8) + '…' : l.text,
-                }));
-              },
-            },
+            labels: { font: { size: 11 }, boxWidth: 10, padding: 8 },
           },
-          tooltip: { callbacks: {
-            label: ctx => ` ${ctx.label}: ${ctx.parsed} 条`,
-          }},
         },
       },
     });
   }
 
-  // 学历+经验合并为分组柱状图
-  function groupedBarChart(id, degreeData, expData) {
-    destroy(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-
-    // 统一取两个维度的标签集合
-    const degLabels = degreeData.map(d => d.label);
-    const expLabels = expData.map(d => d.label);
-
-    _charts[id] = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: degLabels,
-        datasets: [{
-          label: '学历',
-          data: degreeData.map(d => d.value),
-          backgroundColor: '#3b82f6',
-          borderRadius: 3,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            align: 'end',
-            labels: { color: DARK.legendColor, font: { size: 10 }, boxWidth: 9, padding: 6 },
-          },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} 条` }},
-        },
-        scales: {
-          x: {
-            ticks: { color: DARK.tickColor, font: { size: 10 } },
-            grid:  { display: false },
-          },
-          y: {
-            ticks: { color: DARK.tickColor, font: { size: 10 }, precision: 0 },
-            grid:  { color: DARK.gridColor },
-            beginAtZero: true,
-          },
-        },
-      },
-    });
-
-    // 经验数据作为第二个 Y 轴叠加（折线）
-    _charts[id].data.datasets.push({
-      label: '经验',
-      data: (() => {
-        // 对齐到同一 x 轴（用学历标签数量补齐）
-        return expLabels.map(l => {
-          const found = expData.find(d => d.label === l);
-          return found ? found.value : 0;
-        }).slice(0, degLabels.length);
-      })(),
-      type: 'line',
-      borderColor: '#f59e0b',
-      backgroundColor: 'rgba(245,158,11,.15)',
-      borderWidth: 2,
-      pointRadius: 3,
-      pointBackgroundColor: '#f59e0b',
-      tension: 0.3,
-      yAxisID: 'y',
-    });
-    _charts[id].update();
-  }
-
-  // ── 渲染各图 ────────────────────────────────────────
+  // 薪资：柱状
   barChart('chart-salary',
     stats.salary.map(d => d.label),
     stats.salary.map(d => d.value),
     '#3b82f6');
 
+  // 城市：环形
   doughnutChart('chart-city',
     stats.city.map(d => d.label),
     stats.city.map(d => d.value));
 
+  // 规模 + 融资：环形
   doughnutChart('chart-scale',
     stats.scale.map(d => d.label),
     stats.scale.map(d => d.value));
 
+  // 行业：环形
   doughnutChart('chart-industry',
     stats.industry.map(d => d.label),
     stats.industry.map(d => d.value));
 
-  // 学历+经验合并图（使用新 canvas id）
-  groupedBarChart('chart-degree-exp', stats.degree, stats.experience);
+  // 学历：柱状
+  barChart('chart-degree',
+    stats.degree.map(d => d.label),
+    stats.degree.map(d => d.value),
+    '#10b981');
+
+  // 经验：柱状
+  barChart('chart-experience',
+    stats.experience.map(d => d.label),
+    stats.experience.map(d => d.value),
+    '#f59e0b');
 }
 
 // ── 筛选下拉框填充 ────────────────────────────────────
@@ -580,15 +485,12 @@ function renderDataTable(jobs) {
     const selCls  = _selectedIds.has(j.id) ? 'selected' : '';
     const urlBtn  = j.source_url
       ? `<a class="tbl-link" href="${j.source_url}" target="_blank">🔗</a>` : '';
-    // 薪资空值特殊处理
-    const salText = j.salary || '面议';
-    const salCls  = salText === '面议' ? 'col-sal muted' : 'col-sal';
     return `<tr class="${selCls}" data-id="${j.id}">
       <td class="col-ck"><input type="checkbox" class="row-ck" data-id="${j.id}" ${checked}></td>
       <td class="col-date">${(j.date||'').slice(5)}</td>
       <td class="col-job" title="${escHtml(j.job_name)}">${escHtml(j.job_name||'—')}</td>
       <td class="col-co"  title="${escHtml(j.company)}">${escHtml(j.company||'—')}</td>
-      <td class="${salCls}">${escHtml(salText)}</td>
+      <td class="col-sal">${escHtml(j.salary||'—')}</td>
       <td class="col-city">${escHtml(j.city||'—')}</td>
       <td class="col-scale">${escHtml(j.scale||'—')}</td>
       <td class="col-exp">${escHtml(j.experience||'—')}</td>
@@ -706,9 +608,146 @@ if (refreshEl) refreshEl.addEventListener('click', loadDataTab);
 window.addEventListener("pywebviewready", async () => {
   await loadSettings();
   await loadHistory();
+  await loadSkillAnalysis();
   const result = await api().check_environment();
   if (!result.chrome_ok) {
-    $("env-msg").textContent = `⚠️  Chrome 未连接，点击去设置`;
-    $("env-banner").classList.remove("hidden");
+    $('env-msg').textContent = `⚠️  Chrome 未连接，点击去设置`;
+    $('env-banner').classList.remove('hidden');
+  }
+});
+
+// ── 分析页逻辑 ─────────────────────────────────────────
+async function loadSkillAnalysis() {
+  if (!api()) return;
+  try {
+    const analysis = await api().get_skill_analysis();
+    renderSkillMap(analysis);
+    renderSkillList(analysis);
+    renderResumeSummary(analysis);
+  } catch (e) {
+    console.error(e);
+    renderSkillMap({ skills: [], jobs_kept: 0, filtered_out: 0, summary: { focus: '—', message: '暂无数据' } });
+  }
+}
+
+function renderResumeSummary(analysis) {
+  const jobsKept = $('analysis-jobs-kept');
+  const filteredOut = $('analysis-filtered-out');
+  const focus = $('analysis-focus');
+  const box = $('analysis-summary-box');
+  const empty = $('analysis-empty');
+
+  const jobsKeptNum = Number(analysis?.jobs_kept || 0);
+  const filteredNum = Number(analysis?.filtered_out || 0);
+
+  if (jobsKept) jobsKept.textContent = jobsKeptNum;
+  if (filteredOut) filteredOut.textContent = filteredNum;
+  if (focus) focus.textContent = analysis?.summary?.focus || '—';
+
+  if (box) {
+    if (jobsKeptNum > 0) {
+      box.innerHTML = `
+        <span class="pill">${analysis?.summary?.focus || '机器视觉技能图谱'}</span>
+        <span class="pill muted">${analysis?.summary?.message || '已剔除非视觉岗位'}</span>
+      `;
+    } else {
+      box.innerHTML = `
+        <span class="pill">等待数据</span>
+        <span class="pill muted">先采集 JD 后再分析</span>
+      `;
+    }
+  }
+
+  if (empty) {
+    empty.classList.toggle('hidden', jobsKeptNum > 0);
+  }
+}
+
+function renderSkillList(analysis) {
+  const list = $('skill-list');
+  if (!list) return;
+
+  const skills = analysis?.skills || [];
+  if (!skills.length) {
+    list.innerHTML = '<div class="skill-empty">暂无有效技能数据</div>';
+    return;
+  }
+
+  list.innerHTML = skills.slice(0, 12).map((item, idx) => `
+    <div class="skill-item">
+      <div class="skill-row">
+        <span class="skill-rank">${idx + 1}</span>
+        <span class="skill-name">${item.name}</span>
+        <span class="skill-score">${item.weight}</span>
+      </div>
+      <div class="skill-bar"><i style="width:${Math.min(100, item.weight * 5)}%"></i></div>
+    </div>
+  `).join('');
+}
+
+function renderSkillMap(analysis) {
+  const canvas = document.getElementById('skill-map-chart');
+  if (!canvas) return;
+
+  const skills = analysis?.skills || [];
+  const labels = skills.slice(0, 12).map(x => x.name);
+  const values = skills.slice(0, 12).map(x => x.weight);
+
+  if (_charts['skill-map-chart']) {
+    _charts['skill-map-chart'].destroy();
+    delete _charts['skill-map-chart'];
+  }
+
+  if (!labels.length) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  _charts['skill-map-chart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '技能权重',
+        data: values,
+        backgroundColor: '#3fb950',
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} 权重` } }
+      },
+      scales: {
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45, minRotation: 30, font: { size: 10 } },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+$('refresh-analysis-btn').addEventListener('click', loadSkillAnalysis);
+
+window.addEventListener('pywebviewready', async () => {
+  await loadSettings();
+  await loadHistory();
+  await loadSkillAnalysis();
+  const result = await api().check_environment();
+  if (!result.chrome_ok) {
+    $('env-msg').textContent = `⚠️  Chrome 未连接，点击去设置`;
+    $('env-banner').classList.remove('hidden');
   }
 });

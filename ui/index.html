@@ -13,6 +13,7 @@
     <button class="tab active" data-tab="collect">职位采集</button>
     <button class="tab" data-tab="settings">设置</button>
     <button class="tab" data-tab="data">📊 数据</button>
+    <button class="tab" data-tab="analysis">🧠 分析</button>
   </div>
   <div class="topbar-right">
     <span id="history-info" class="history-info">—</span>
@@ -383,6 +384,51 @@
 
 </div>
 
+
+<!-- 分析页 -->
+  <div class="tab-content" id="tab-analysis">
+    <div class="analysis-layout">
+      <div class="analysis-panel full-width">
+        <div class="section-header">
+          <h3>机器视觉 JD 技能图谱</h3>
+          <button id="refresh-analysis-btn" class="btn-ghost">↻ 刷新分析</button>
+        </div>
+
+        <div class="analysis-summary" id="analysis-summary-box">
+          <span class="pill">等待数据</span>
+          <span class="pill muted">先采集 JD 后再分析</span>
+        </div>
+
+        <div class="analysis-grid">
+          <div class="mini-card">
+            <div class="mini-title">已保留岗位</div>
+            <div class="mini-value" id="analysis-jobs-kept">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-title">剔除非视觉</div>
+            <div class="mini-value" id="analysis-filtered-out">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-title">重点方向</div>
+            <div class="mini-value" id="analysis-focus">—</div>
+          </div>
+        </div>
+
+        <div class="skill-map-wrap">
+          <canvas id="skill-map-chart"></canvas>
+        </div>
+
+        <div id="analysis-empty" class="analysis-empty hidden">
+          暂无 JD 数据，先在「职位采集」页抓取岗位后再打开分析页。
+        </div>
+
+        <div class="skill-list-wrap">
+          <div class="skill-list-title">Top Skills</div>
+          <div id="skill-list" class="skill-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="app.js"></script>

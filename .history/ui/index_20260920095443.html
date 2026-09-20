@@ -13,6 +13,7 @@
     <button class="tab active" data-tab="collect">职位采集</button>
     <button class="tab" data-tab="settings">设置</button>
     <button class="tab" data-tab="data">📊 数据</button>
+    <button class="tab" data-tab="analysis">🧠 分析</button>
   </div>
   <div class="topbar-right">
     <span id="history-info" class="history-info">—</span>
@@ -295,7 +296,7 @@
 </div>
 
 <!-- ══ 数据 Tab 内容 ══════════════════════════════════ -->
-<div class="tab-content" id="tab-data">
+<div class="tab-content"  id="tab-data">
 
   <!-- 加载遮罩 -->
   <div id="data-loading" class="data-loading hidden">
@@ -383,6 +384,61 @@
 
 </div>
 
+
+<!-- 分析页 -->
+  <div class="tab-content" id="tab-analysis">
+    <div class="analysis-layout">
+      <div class="analysis-panel">
+        <div class="section-header">
+          <h3>机器视觉 JD 技能图谱</h3>
+          <button id="refresh-analysis-btn" class="btn-ghost">↻ 刷新分析</button>
+        </div>
+
+        <div class="analysis-summary" id="analysis-summary-box">
+          <span class="pill">已筛选相关岗位</span>
+          <span class="pill muted">剔除非视觉岗位</span>
+        </div>
+
+        <div class="skill-map-wrap">
+          <canvas id="skill-map-chart"></canvas>
+        </div>
+
+        <div class="analysis-grid">
+          <div class="mini-card">
+            <div class="mini-title">已保留岗位</div>
+            <div class="mini-value" id="analysis-jobs-kept">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-title">剔除非视觉</div>
+            <div class="mini-value" id="analysis-filtered-out">0</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-title">重点岗位</div>
+            <div class="mini-value" id="analysis-focus">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-panel">
+        <div class="section-header">
+          <h3>简历匹配</h3>
+          <button id="upload-resume-btn" class="primary-btn">📄 上传简历</button>
+        </div>
+
+        <input id="resume-file-input" type="file" accept=".txt,.md,.doc,.docx,.pdf" hidden>
+
+        <textarea id="resume-text" class="resume-textarea" placeholder="可直接粘贴简历内容，或上传 TXT / MD / PDF（PDF 需先转成文本）"></textarea>
+
+        <div class="match-actions">
+          <button id="match-resume-btn" class="start-btn small-btn">智能匹配岗位</button>
+        </div>
+
+        <div id="resume-match-result" class="resume-result">
+          <div class="empty-state">暂无匹配结果</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="app.js"></script>

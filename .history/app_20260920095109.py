@@ -10,7 +10,6 @@ import queue
 import json
 import time
 import traceback
-import re
 from pathlib import Path
 from typing import Optional
 

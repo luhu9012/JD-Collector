@@ -40,16 +40,10 @@ function updateStats() {
 function switchTab(name) {
   document.querySelectorAll(".tab").forEach(t =>
     t.classList.toggle("active", t.dataset.tab === name));
-  document.querySelectorAll(".tab-content").forEach(c =>{
-     c.classList.remove("active");
-    if(c.id === "tab-" + name){
-      c.classList.add("active");
-    }
- 
+  document.querySelectorAll(".tab-content").forEach(c =>
+    c.classList.toggle("active", c.id === "tab-" + name));
   if (name === "data") loadDataTab();
-  })
 }
-
 document.querySelectorAll(".tab").forEach(tab =>
   tab.addEventListener("click", () => switchTab(tab.dataset.tab)));
 
@@ -618,5 +612,158 @@ window.addEventListener("pywebviewready", async () => {
   if (!result.chrome_ok) {
     $("env-msg").textContent = `⚠️  Chrome 未连接，点击去设置`;
     $("env-banner").classList.remove("hidden");
+  }
+});
+
+// ── 分析页逻辑 ─────────────────────────────────────────
+async function loadSkillAnalysis() {
+  if (!api()) return;
+  try {
+    const analysis = await api().get_skill_analysis();
+    renderSkillMap(analysis);
+    renderResumeSummary(analysis);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderResumeSummary(analysis) {
+  const jobsKept = $('analysis-jobs-kept');
+  const filteredOut = $('analysis-filtered-out');
+  const focus = $('analysis-focus');
+  const box = $('analysis-summary-box');
+  if (jobsKept) jobsKept.textContent = analysis?.jobs_kept || 0;
+  if (filteredOut) filteredOut.textContent = analysis?.filtered_out || 0;
+  if (focus) focus.textContent = analysis?.summary?.focus || '—';
+  if (box) {
+    box.innerHTML = `
+      <span class="pill">${analysis?.summary?.focus || '机器视觉技能图谱'}</span>
+      <span class="pill muted">${analysis?.summary?.message || '已剔除非视觉岗位'}</span>
+    `;
+  }
+}
+
+function renderSkillMap(analysis) {
+  if (!analysis || !analysis.skills || !analysis.skills.length) {
+    return;
+  }
+
+  const canvas = document.getElementById('skill-map-chart');
+  if (!canvas) return;
+
+  const labels = analysis.skills.slice(0, 12).map(x => x.name);
+  const values = analysis.skills.slice(0, 12).map(x => x.weight);
+
+  if (_charts['skill-map-chart']) {
+    _charts['skill-map-chart'].destroy();
+    delete _charts['skill-map-chart'];
+  }
+
+  const ctx = canvas.getContext('2d');
+  _charts['skill-map-chart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '技能权重',
+        data: values,
+        backgroundColor: '#3fb950',
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} 权重` } }
+      },
+      scales: {
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45, minRotation: 30, font: { size: 10 } },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+async function matchResume() {
+  if (!api()) return;
+  const text = $('resume-text').value.trim();
+  if (!text) {
+    $('resume-match-result').innerHTML = '<div class="empty-state">请先粘贴或上传简历内容</div>';
+    return;
+  }
+
+  const result = await api().get_resume_match(text);
+  if (!result.ok) {
+    $('resume-match-result').innerHTML = `<div class="empty-state">${result.error}</div>`;
+    return;
+  }
+
+  const matched = result.matched_skills || [];
+  const best = result.best_roles || [];
+  const gaps = result.gap_skills || [];
+  const suggestions = result.suggestions || [];
+
+  const topItems = matched.map(item => `
+    <div class="match-row">
+      <span>${item.name}</span>
+      <div class="match-bar"><i style="width:${Math.min(100, item.match_score)}%"></i></div>
+      <strong>${item.match_score}</strong>
+    </div>
+  `).join('');
+
+  $('resume-match-result').innerHTML = `
+    <div class="result-block">
+      <div class="result-title">匹配概览</div>
+      <div class="chip-list">
+        ${(best.slice(0, 6).map(x => `<span class="pill match-pill">${x.name}</span>`).join('') || '<span class="pill muted">暂无强相关岗位</span>')}
+      </div>
+    </div>
+    <div class="result-block">
+      <div class="result-title">技能匹配</div>
+      ${topItems || '<div class="empty-state">暂无数据</div>'}
+    </div>
+    <div class="result-block">
+      <div class="result-title">建议优化</div>
+      <ul class="tips-list">
+        ${suggestions.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+    </div>
+    ${gaps.length ? `<div class="result-block"><div class="result-title">缺口技能</div><div class="chip-list">${gaps.map(x => `<span class="pill muted">${x}</span>`).join('')}</div></div>` : ''}
+  `;
+}
+
+async function handleResumeUpload(file) {
+  if (!file) return;
+  const text = await file.text().catch(() => '');
+  if (!text) {
+    $('resume-text').value = '无法读取该文件内容，请手动粘贴文本。';
+    return;
+  }
+  $('resume-text').value = text.slice(0, 20000);
+}
+
+$('refresh-analysis-btn').addEventListener('click', loadSkillAnalysis);
+$('match-resume-btn').addEventListener('click', matchResume);
+$('upload-resume-btn').addEventListener('click', () => $('resume-file-input').click());
+$('resume-file-input').addEventListener('change', e => handleResumeUpload(e.target.files?.[0]));
+
+window.addEventListener('pywebviewready', async () => {
+  await loadSettings();
+  await loadHistory();
+  await loadSkillAnalysis();
+  const result = await api().check_environment();
+  if (!result.chrome_ok) {
+    $('env-msg').textContent = `⚠️  Chrome 未连接，点击去设置`;
+    $('env-banner').classList.remove('hidden');
   }
 });

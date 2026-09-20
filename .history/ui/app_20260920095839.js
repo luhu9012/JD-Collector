@@ -40,16 +40,10 @@ function updateStats() {
 function switchTab(name) {
   document.querySelectorAll(".tab").forEach(t =>
     t.classList.toggle("active", t.dataset.tab === name));
-  document.querySelectorAll(".tab-content").forEach(c =>{
-     c.classList.remove("active");
-    if(c.id === "tab-" + name){
-      c.classList.add("active");
-    }
- 
+  document.querySelectorAll(".tab-content").forEach(c =>
+    c.classList.toggle("active", c.id === "tab-" + name));
   if (name === "data") loadDataTab();
-  })
-   
-
+}
 document.querySelectorAll(".tab").forEach(tab =>
   tab.addEventListener("click", () => switchTab(tab.dataset.tab)));
 
@@ -614,9 +608,146 @@ if (refreshEl) refreshEl.addEventListener('click', loadDataTab);
 window.addEventListener("pywebviewready", async () => {
   await loadSettings();
   await loadHistory();
+  await loadSkillAnalysis();
   const result = await api().check_environment();
   if (!result.chrome_ok) {
-    $("env-msg").textContent = `⚠️  Chrome 未连接，点击去设置`;
-    $("env-banner").classList.remove("hidden");
+    $('env-msg').textContent = `⚠️  Chrome 未连接，点击去设置`;
+    $('env-banner').classList.remove('hidden');
+  }
+});
+
+// ── 分析页逻辑 ─────────────────────────────────────────
+async function loadSkillAnalysis() {
+  if (!api()) return;
+  try {
+    const analysis = await api().get_skill_analysis();
+    renderSkillMap(analysis);
+    renderSkillList(analysis);
+    renderResumeSummary(analysis);
+  } catch (e) {
+    console.error(e);
+    renderSkillMap({ skills: [], jobs_kept: 0, filtered_out: 0, summary: { focus: '—', message: '暂无数据' } });
+  }
+}
+
+function renderResumeSummary(analysis) {
+  const jobsKept = $('analysis-jobs-kept');
+  const filteredOut = $('analysis-filtered-out');
+  const focus = $('analysis-focus');
+  const box = $('analysis-summary-box');
+  const empty = $('analysis-empty');
+
+  const jobsKeptNum = Number(analysis?.jobs_kept || 0);
+  const filteredNum = Number(analysis?.filtered_out || 0);
+
+  if (jobsKept) jobsKept.textContent = jobsKeptNum;
+  if (filteredOut) filteredOut.textContent = filteredNum;
+  if (focus) focus.textContent = analysis?.summary?.focus || '—';
+
+  if (box) {
+    if (jobsKeptNum > 0) {
+      box.innerHTML = `
+        <span class="pill">${analysis?.summary?.focus || '机器视觉技能图谱'}</span>
+        <span class="pill muted">${analysis?.summary?.message || '已剔除非视觉岗位'}</span>
+      `;
+    } else {
+      box.innerHTML = `
+        <span class="pill">等待数据</span>
+        <span class="pill muted">先采集 JD 后再分析</span>
+      `;
+    }
+  }
+
+  if (empty) {
+    empty.classList.toggle('hidden', jobsKeptNum > 0);
+  }
+}
+
+function renderSkillList(analysis) {
+  const list = $('skill-list');
+  if (!list) return;
+
+  const skills = analysis?.skills || [];
+  if (!skills.length) {
+    list.innerHTML = '<div class="skill-empty">暂无有效技能数据</div>';
+    return;
+  }
+
+  list.innerHTML = skills.slice(0, 12).map((item, idx) => `
+    <div class="skill-item">
+      <div class="skill-row">
+        <span class="skill-rank">${idx + 1}</span>
+        <span class="skill-name">${item.name}</span>
+        <span class="skill-score">${item.weight}</span>
+      </div>
+      <div class="skill-bar"><i style="width:${Math.min(100, item.weight * 5)}%"></i></div>
+    </div>
+  `).join('');
+}
+
+function renderSkillMap(analysis) {
+  const canvas = document.getElementById('skill-map-chart');
+  if (!canvas) return;
+
+  const skills = analysis?.skills || [];
+  const labels = skills.slice(0, 12).map(x => x.name);
+  const values = skills.slice(0, 12).map(x => x.weight);
+
+  if (_charts['skill-map-chart']) {
+    _charts['skill-map-chart'].destroy();
+    delete _charts['skill-map-chart'];
+  }
+
+  if (!labels.length) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  _charts['skill-map-chart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '技能权重',
+        data: values,
+        backgroundColor: '#3fb950',
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} 权重` } }
+      },
+      scales: {
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45, minRotation: 30, font: { size: 10 } },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+$('refresh-analysis-btn').addEventListener('click', loadSkillAnalysis);
+
+window.addEventListener('pywebviewready', async () => {
+  await loadSettings();
+  await loadHistory();
+  await loadSkillAnalysis();
+  const result = await api().check_environment();
+  if (!result.chrome_ok) {
+    $('env-msg').textContent = `⚠️  Chrome 未连接，点击去设置`;
+    $('env-banner').classList.remove('hidden');
   }
 });
